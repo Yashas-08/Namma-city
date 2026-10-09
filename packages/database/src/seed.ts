@@ -127,16 +127,58 @@ async function main() {
     },
   });
 
+  const citizenPrimary = await prisma.user.upsert({
+    where: { email: 'citizen@nammacity.gov.in' },
+    update: {
+      name: 'Yashas Citizen',
+      phone: '+91 98765 43210',
+      avatarUrl: '/avatars/yashas.png',
+      role: 'CITIZEN',
+      userStatus: 'ACTIVE',
+    },
+    create: {
+      name: 'Yashas Citizen',
+      email: 'citizen@nammacity.gov.in',
+      phone: '+91 98765 43210',
+      avatarUrl: '/avatars/yashas.png',
+      passwordHash,
+      role: 'CITIZEN',
+      userStatus: 'ACTIVE',
+    },
+  });
+
+  const staffPrimary = await prisma.user.upsert({
+    where: { email: 'staff@nammacity.gov.in' },
+    update: {
+      name: 'Field Officer Ramesh',
+      phone: '+91 94480 12345',
+      role: 'STAFF',
+      assignedArea: 'Ward 151, Koramangala',
+      departmentId: deptRoads.id,
+      userStatus: 'ACTIVE',
+    },
+    create: {
+      name: 'Field Officer Ramesh',
+      email: 'staff@nammacity.gov.in',
+      phone: '+91 94480 12345',
+      passwordHash,
+      role: 'STAFF',
+      assignedArea: 'Ward 151, Koramangala',
+      departmentId: deptRoads.id,
+      userStatus: 'ACTIVE',
+    },
+  });
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@nammacity.gov.in' },
     update: {
-      name: 'Municipal Admin',
+      name: 'Municipal Admin Divya',
       phone: '+91 80222 11111',
       role: 'ADMIN',
       userStatus: 'ACTIVE',
     },
     create: {
-      name: 'Municipal Admin',
+      name: 'Municipal Admin Divya',
       email: 'admin@nammacity.gov.in',
       phone: '+91 80222 11111',
       passwordHash,

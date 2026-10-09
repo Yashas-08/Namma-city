@@ -126,9 +126,19 @@ router.post('/', requireAuth, async (req: Request, res: Response, next: NextFunc
   try {
     const body = createRequestSchema.parse(req.body);
 
-    // Generate unique #REQ-XXXX
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const publicRequestId = `#REQ-${randomNum}`;
+    // Generate unique #REQ-XXXX with collision check
+    let publicRequestId = '';
+    for (let attempts = 0; attempts < 5; attempts++) {
+      const candidate = `#REQ-${Math.floor(1000 + Math.random() * 9000)}`;
+      const exists = await prisma.civicRequest.findUnique({ where: { publicRequestId: candidate } });
+      if (!exists) {
+        publicRequestId = candidate;
+        break;
+      }
+    }
+    if (!publicRequestId) {
+      publicRequestId = `#REQ-${Date.now().toString().slice(-4)}`;
+    }
 
     // Find appropriate department
     const deptCode = getDepartmentCodeForCategory(body.categoryId);

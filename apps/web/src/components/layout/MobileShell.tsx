@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { StatusBar } from './StatusBar';
 import { BottomNav } from './BottomNav';
 import { useAuth } from '@/lib/auth-context';
-import { ShieldCheck, UserCheck, User, ExternalLink } from 'lucide-react';
+import { GeminiCivicAssistant } from '@/components/ai/GeminiCivicAssistant';
+import { ExternalLink } from 'lucide-react';
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -96,6 +97,9 @@ export function MobileShell({
         <div className={`flex-1 overflow-y-auto no-scrollbar relative flex flex-col ${className}`}>
           {children}
         </div>
+
+        {/* Gemini Civic AI (Floating inside the phone screen) */}
+        <GeminiCivicAssistant bottomOffset={showBottomNav ? 'bottom-20' : 'bottom-6'} />
 
         {/* Bottom Navigation */}
         {showBottomNav && <BottomNav />}

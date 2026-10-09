@@ -1,7 +1,24 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+export function getApiBaseUrl(): string {
+  // Server-side: prefer Vercel service binding API_URL if present
+  if (typeof window === 'undefined') {
+    if (process.env.API_URL) {
+      const trimmed = process.env.API_URL.replace(/\/$/, '');
+      return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+    }
+  }
+  // Client-side environment variable
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
+  }
+  // Client-side browser same-origin fallback
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/api/v1`;
+  }
+  return 'http://localhost:5000/api/v1';
+}
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
+  const url = `${getApiBaseUrl()}${endpoint}`;
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),

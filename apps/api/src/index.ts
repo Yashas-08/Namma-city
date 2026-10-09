@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config';
 import { authenticate } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
+import { prisma } from '@namma-city/database';
 
 import authRouter from './modules/auth/auth.router';
 import usersRouter from './modules/users/users.router';
@@ -18,6 +19,7 @@ import certificatesRouter from './modules/certificates/certificates.router';
 import transportRouter from './modules/transport/transport.router';
 
 const app = express();
+app.disable('x-powered-by');
 
 // Middleware
 app.use(
@@ -33,14 +35,43 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(authenticate);
 
-// Health check
-app.get('/api/v1/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    service: 'namma-city-api',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-  });
+// Health check with active database verification
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    const [userCount, requestCount, departmentCount] = await Promise.all([
+      prisma.user.count(),
+      prisma.civicRequest.count(),
+      prisma.department.count(),
+    ]);
+
+    res.json({
+      status: 'healthy',
+      service: 'namma-city-api',
+      version: '1.0.0',
+      database: {
+        status: 'connected',
+        healthy: true,
+        metrics: {
+          users: userCount,
+          requests: requestCount,
+          departments: departmentCount,
+        },
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (dbError: any) {
+    res.status(503).json({
+      status: 'degraded',
+      service: 'namma-city-api',
+      version: '1.0.0',
+      database: {
+        status: 'disconnected',
+        healthy: false,
+        error: dbError.message,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Mount modules

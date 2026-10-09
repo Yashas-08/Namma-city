@@ -16,6 +16,8 @@ dist/
 **/dist/
 build/
 **/build/
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Database files
 *.db
