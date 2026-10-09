@@ -1,0 +1,235 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  avatarUrl     String?
+  passwordHash  String
+  role          String    @default("CITIZEN") // CITIZEN, STAFF, ADMIN
+  assignedArea  String?   // e.g. Ward 151, Koramangala
+  userStatus    String    @default("ACTIVE") // ACTIVE, INACTIVE
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  requests      CivicRequest[]       @relation("CitizenRequests")
+  assignedRequests CivicRequest[]    @relation("AssignedStaffRequests")
+  comments      RequestComment[]
+  statusChanges RequestStatusHistory[]
+  payments      PaymentTransaction[]
+  notifications Notification[]
+  savedLocations SavedLocation[]
+  auditLogs     AuditLog[]
+}
+
+model Department {
+  id             String    @id @default(cuid())
+  name           String
+  code           String    @unique
+  contactDetails String?
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  staffMembers   User[]
+  requests       CivicRequest[]
+}
+
+model ServiceCategory {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  sortOrder   Int            @default(0)
+  services    CivicService[]
+}
+
+model CivicService {
+  id                 String          @id @default(cuid())
+  categoryId         String
+  category           ServiceCategory @relation(fields: [categoryId], references: [id])
+  name               String
+  slug               String          @unique
+  description        String
+  icon               String          @default("activity")
+  iconBgColor        String?
+  badge              String?
+  integrationMode    String          @default("DEMO") // LIVE, SANDBOX, DEMO, INFORMATIONAL, UNAVAILABLE
+  availabilityStatus String          @default("AVAILABLE")
+  enabled            Boolean         @default(true)
+  sortOrder          Int             @default(0)
+  createdAt          DateTime        @default(now())
+}
+
+model CivicRequest {
+  id                 String                  @id @default(cuid())
+  publicRequestId    String                  @unique // e.g. #REQ-2048
+  citizenId          String
+  citizen            User                    @relation("CitizenRequests", fields: [citizenId], references: [id])
+  departmentId       String?
+  department         Department?             @relation(fields: [departmentId], references: [id])
+  categoryId         String                  // ROADS, STREET_LIGHTS, GARBAGE, WATER, DRAINAGE, etc.
+  categoryName       String
+  title              String
+  description        String
+  address            String
+  latitude           Float
+  longitude          Float
+  landmark           String?
+  status             String                  @default("SUBMITTED") // SUBMITTED, ASSIGNED, IN_PROGRESS, RESOLVED, REJECTED
+  priority           String                  @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  assignedStaffId    String?
+  assignedStaff      User?                   @relation("AssignedStaffRequests", fields: [assignedStaffId], references: [id])
+  assignedAt         DateTime?
+  acceptedAt         DateTime?
+  resolutionNote     String?
+  resolutionEvidence String?
+  reassignmentReason String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  resolvedAt         DateTime?
+
+  attachments        RequestAttachment[]
+  statusHistory      RequestStatusHistory[]
+  comments           RequestComment[]
+}
+
+model RequestAttachment {
+  id          String       @id @default(cuid())
+  requestId   String
+  request     CivicRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  storageKey  String
+  fileUrl     String
+  contentType String
+  size        Int
+  uploadedBy  String
+  createdAt   DateTime     @default(now())
+}
+
+model RequestStatusHistory {
+  id             String       @id @default(cuid())
+  requestId      String
+  request        CivicRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  previousStatus String?
+  newStatus      String
+  changedById    String
+  changedBy      User         @relation(fields: [changedById], references: [id])
+  note           String?
+  createdAt      DateTime     @default(now())
+}
+
+model RequestComment {
+  id        String       @id @default(cuid())
+  requestId String
+  request   CivicRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User         @relation(fields: [authorId], references: [id])
+  message   String
+  createdAt DateTime     @default(now())
+}
+
+model UtilityProvider {
+  id              String   @id @default(cuid())
+  name            String
+  serviceType     String   // ELECTRICITY, WATER, PROPERTY_TAX, OTHER
+  providerCode    String   @unique // BESCOM, BWSSB, BBMP_TAX, etc.
+  integrationMode String   @default("DEMO") // LIVE, SANDBOX, DEMO
+  enabled         Boolean  @default(true)
+  bills           Bill[]
+}
+
+model Bill {
+  id               String          @id @default(cuid())
+  providerId       String
+  provider         UtilityProvider @relation(fields: [providerId], references: [id])
+  accountReference String          // Consumer Number / Tax Assessment Number
+  customerName     String
+  amountMinor      Int             // Stored in paise/cents (e.g. 124000 = 1240.00)
+  currency         String          @default("INR")
+  dueDate          DateTime
+  billingPeriod    String
+  billStatus       String          @default("UNPAID") // UNPAID, PAID, OVERDUE
+  externalRef      String?
+  payments         PaymentTransaction[]
+
+  @@unique([providerId, accountReference])
+}
+
+model PaymentTransaction {
+  id             String       @id @default(cuid())
+  transactionId  String       @unique // e.g. TXN789456123
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  billId         String?
+  bill           Bill?        @relation(fields: [billId], references: [id])
+  idempotencyKey String?      @unique
+  providerName   String
+  serviceType    String
+  accountReference String
+  amountMinor    Int
+  currency       String       @default("INR")
+  gateway        String       @default("SANDBOX_SIMULATOR")
+  paymentMethod  String       // UPI, DEBIT_CARD, CREDIT_CARD, NET_BANKING
+  status         String       @default("SUCCESSFUL") // INITIATED, PENDING, SUCCESSFUL, FAILED
+  receiptNumber  String       @unique
+  isSimulated    Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Notification {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  message         String
+  type            String    @default("REQUEST_UPDATE") // REQUEST_UPDATE, PAYMENT, CIVIC_ALERT, SYSTEM
+  readAt          DateTime?
+  relatedEntityId String?
+  createdAt       DateTime  @default(now())
+}
+
+model CivicLocation {
+  id           String   @id @default(cuid())
+  name         String
+  category     String   // MUNICIPAL, POLICE, HOSPITAL, TRANSPORT, POST_OFFICE
+  address      String
+  latitude     Float
+  longitude    Float
+  phone        String?
+  openingHours String?
+  source       String   @default("BBMP_CIVIC_DIRECTORY")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model SavedLocation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   // Home, Office, Parent's Home
+  address   String
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?  // JSON string
+  createdAt  DateTime @default(now())
+}

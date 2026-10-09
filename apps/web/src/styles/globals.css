@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #176B68;
+  --color-primary-dark: #125452;
+  --color-primary-light: #E8F3F1;
+  --color-bg: #F7F9F8;
+  --color-surface: #FFFFFF;
+  --color-text: #172322;
+  --color-text-muted: #687674;
+  --color-border: #DCE4E2;
+  --color-success: #287A50;
+  --color-warning: #A66A25;
+  --color-error: #C4473F;
+  --color-info: #356F8A;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #ECEFEF;
+  color: #172322;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure mobile viewport scrolling feels native */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  z-index: 10;
+}
