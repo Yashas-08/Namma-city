@@ -20,6 +20,12 @@
   },
   "rewrites": [
     {
+      "source": "/api/v1",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
       "source": "/api/v1/(.*)",
       "destination": {
         "service": "api"
