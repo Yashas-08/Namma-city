@@ -11,6 +11,7 @@
     "dev": "concurrently \"npm run dev --workspace=apps/api\" \"npm run dev --workspace=apps/web\"",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",
+    "postinstall": "npm run prisma:generate && npm run build --workspace=packages/shared && npm run build --workspace=packages/database",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "prisma:generate": "npm run prisma:generate --workspace=packages/database",

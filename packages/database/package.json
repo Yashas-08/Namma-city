@@ -4,10 +4,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "node scripts/generate.js",
     "prisma:migrate": "prisma db push",
     "prisma:seed": "tsx src/seed.ts",
-    "build": "tsc"
+    "build": "node scripts/generate.js && tsc"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1"
